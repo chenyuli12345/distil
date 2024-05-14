@@ -2,7 +2,7 @@ import torch
 
 from .score_streaming_strategy import ScoreStreamingStrategy
 
-class EntropySampling(ScoreStreamingStrategy):    # 
+class EntropySampling(ScoreStreamingStrategy):    #定义一个类，继承自ScoreStreamingStrategy类
     
     def __init__(self, labeled_dataset, unlabeled_dataset, net, nclasses, args={}):
         

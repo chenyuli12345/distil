@@ -1,23 +1,25 @@
 import torch
-import torch.nn.functional as F
-from torch.utils.data import DataLoader
+import torch.nn.functional as F #这个库包含了很多神经网络的函数，比如损失函数，激活函数等，通常在定义神经网络的前向传播过程中使用
+from torch.utils.data import DataLoader #可以用来加载和预处理数据的工具，可以批量处理数据，进行数据洗牌，并提供并行数据加载等功能
 
-def dict_to(dictionary, device):
+#定义一个函数，作用是将参数dictionary中的所有可移动参数移动到指定的设备（来自参数device）上
+def dict_to(dictionary, device): #接受两个参数，第一个代表字典，第二个代表设备
     
     # Predict the most likely class
-    if type(dictionary) == dict:
-        for key in dictionary:
-            value = dictionary[key]
-            if hasattr(value, "to"):
-                dictionary[key] = value.to(device=device)
+    if type(dictionary) == dict: #检查输入参数是否是字典类型
+        for key in dictionary: #遍历字典中的每一个键
+            value = dictionary[key] #获取键对应的值
+            if hasattr(value, "to"): #检查值是否有to属性，这是pytorch张量的一个方法，用于将张量移动到指定设备上
+                dictionary[key] = value.to(device=device) #如果有to方法，将值移动到指定设备上
     
-    return dictionary
+    return dictionary #返回更新后的字典，这个字典包含已经被移动到指定设备上的元素
                         
 
 class Strategy:
-    def __init__(self, labeled_dataset, unlabeled_dataset, net, nclasses, args={}): #
+    def __init__(self, labeled_dataset, unlabeled_dataset, net, nclasses, args={}): #接受参数来初始化其属性，五个参数分别为标记的数据集、未标记的数据集、网络模型、目标类别数量和其他参数
         
-        self.labeled_dataset = labeled_dataset
+        #将这些传入的参数赋值给类的属性
+        self.labeled_dataset = labeled_dataset 
         self.unlabeled_dataset = unlabeled_dataset
         self.model = net
         self.target_classes = nclasses
