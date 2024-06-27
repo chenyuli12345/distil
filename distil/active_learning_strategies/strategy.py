@@ -122,42 +122,42 @@ class Strategy:
 
         return probs        
 
-    def predict_prob_dropout(self, to_predict_dataset, n_drop):
+    def predict_prob_dropout(self, to_predict_dataset, n_drop): #接收两个参数，第一个参数是要预测的数据集，第二个参数是dropout样本的数量
 
         # Ensure model is on right device and is in TRAIN mode.
         # Train mode is needed to activate randomness in dropout modules.
-        self.model.train()
-        self.model = self.model.to(self.device)
+        self.model.train() #设置模型为训练模式（dropout只在训练模式下有小）
+        self.model = self.model.to(self.device) #将模型移动到指定设备上
         
-        # Create a tensor to hold probabilities
+        # 创建一个全零张量来存储预测的设备，行数len(to_predict_dataset)为要预测的数据集的长度，列数self.target_classes为目标类别的数量，并将设备移动到指定设备上
         probs = torch.zeros([len(to_predict_dataset), self.target_classes]).to(self.device)
         
-        # Create a dataloader object to load the dataset
-        to_predict_dataloader = DataLoader(to_predict_dataset, batch_size = self.args['batch_size'], shuffle = False)
+        # 创建一个数据加载器，用于加载要预测的数据。第一个参数是一个数据集对象，这里是要预测的数据集；第二个参数决定了DataLoader每次迭代时返回的数据的数量；第三个参数表示不打乱数据集
+        to_predict_dataloader = DataLoader(to_predict_dataset, batch_size = self.args['batch_size'], shuffle = False) 
         
-        with torch.no_grad():
+        with torch.no_grad(): #进行预测，不进行梯度计算
             # Repeat n_drop number of times to obtain n_drop dropout samples per data instance
-            for i in range(n_drop):
+            for i in range(n_drop): #重复n_drop次预测过程
                 
                 evaluated_instances = 0
-                for elements_to_predict in to_predict_dataloader:
+                for elements_to_predict in to_predict_dataloader: #遍历要预测的数据集，对于其中每个批量数据
                 
                     # Calculate softmax (probabilities) of predictions
-                    if type(elements_to_predict) == dict:
-                        elements_to_predict = dict_to(elements_to_predict, self.device)
-                        out = self.model(**elements_to_predict)
-                    else:
-                        elements_to_predict = elements_to_predict.to(self.device)
-                        out = self.model(elements_to_predict)
-                    pred = F.softmax(out, dim=1)
+                    if type(elements_to_predict) == dict: #检查数据是否是字典类型
+                        elements_to_predict = dict_to(elements_to_predict, self.device) #使用dict_to函数将数据移动到指定设备上
+                        out = self.model(**elements_to_predict) #使用模型进行预测，这里**用于解包字典，将字典的键值对作为命名参数传递给函数
+                    else: #如果数据不是字典类型
+                        elements_to_predict = elements_to_predict.to(self.device) #将数据移动到指定设备上
+                        out = self.model(elements_to_predict) #使用模型进行预测，这里参数直接传入数据
+                    pred = F.softmax(out, dim=1) #计算预测结果的softmax概率，dim=1表示在第二个维度上进行softmax操作，在这个维度上有多个类别
                 
                     # Accumulate the calculated batch of probabilities into the tensor to return
-                    start_slice = evaluated_instances
-                    end_slice = start_slice + pred.shape[0]
-                    probs[start_slice:end_slice] += pred
-                    evaluated_instances = end_slice
+                    start_slice = evaluated_instances #evaluated_instances表示当前已经评估过的数据实例的数量，将其赋值给start_slice
+                    end_slice = start_slice + pred.shape[0]  #pred.shape[0]表示当前批量数据的数量，将其加到start_slice上得到end_slice
+                    probs[start_slice:end_slice] += pred #在probs张量中的[start_slice:end_slice]范围内加上当前批量数据的预测结果
+                    evaluated_instances = end_slice #更新evaluated_instances为end_slice
 
-        # Divide through by n_drop to get average prob.
+        # 将probs张量中的每个元素除以n_drop，以获得每个数据实例的平均概率
         probs /= n_drop
 
         return probs         
